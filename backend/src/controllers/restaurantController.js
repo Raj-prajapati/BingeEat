@@ -3,7 +3,6 @@ import { ROLES } from "../utils/roles.js";
 
 export const createRestaurant = async (req, res) => {
   try {
-   
     if (req.user.role !== ROLES.RESTAURANT_OWNER) {
       return res.status(403).json({ message: "Not Authorized" });
     }
@@ -16,8 +15,15 @@ export const createRestaurant = async (req, res) => {
         .status(403)
         .json({ message: "Restaurant Alredy Exist From This Owner" });
     }
-    const { description, restaurantname, cuisine, addresses, contact ,deliveryTime} =
-      req.body;
+    const {
+      description,
+      restaurantname,
+      cuisine,
+      addresses,
+      contact,
+      deliveryTime,
+    } = req.body;
+    const imageUrls=req.files?.map((file)=>file.path)||[];
     const restaurant = new Restaurant({
       restaurantowner: userId,
       description: description,
@@ -25,7 +31,8 @@ export const createRestaurant = async (req, res) => {
       restaurantname: restaurantname,
       addresses: addresses,
       cuisine: cuisine,
-      deliveryTime:deliveryTime,
+      deliveryTime: deliveryTime,
+      images:imageUrls
     });
     await restaurant.save();
     return res.status(201).json({
@@ -33,7 +40,7 @@ export const createRestaurant = async (req, res) => {
       message: "Restaurant Created Successfully",
     });
   } catch (error) {
-      console.log("error in restaurant creation", error.message)
+    console.log("error in restaurant creation", error.message);
     return res.status(500).json({ message: "Failed to create restaurant" });
   }
 };
@@ -83,10 +90,10 @@ export const updateRestaurant = async (req, res) => {
       deliveryFee,
       minimumOrder,
       isOpen,
-      images,
+    
       avatar,
     } = req.body;
-
+      const imageUrls=req.files?.map((file)=>file.path)||[];
     const existingRestaurant = await Restaurant.findOne({
       restaurantowner: ownerId,
     });
@@ -107,7 +114,7 @@ export const updateRestaurant = async (req, res) => {
           minimumOrder,
           contact,
           address,
-          images,
+          images:imageUrls,
           isOpen,
           avatar,
         },
@@ -145,5 +152,30 @@ export const deleteRestaurant = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Error in deleting the restaurant" });
+  }
+};
+
+export const searchRestaurants = async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ message: "Search input is required" });
+    }
+    const words = query.trim().split(" ");
+
+    const regexConditions = words.flatMap((word) => [
+      { restaurantname: { $regex: new RegExp(word, "i") } },
+      { cuisine: { $regex: new RegExp(word, "i") } },
+    ]);
+    const data = await Restaurant.find({
+      $or: regexConditions
+    });
+    if (data.length === 0) {
+      return res.status(404).json({ message: "No restaurants found" });
+    }
+    return res.status(200).json(data, { message: "Restaurant found " });
+  } catch (error) {
+    console.log(error.message, "error in RestarauntSearch");
+    return res.status(500).json({ message: "Unexpected error" });
   }
 };

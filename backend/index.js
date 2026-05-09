@@ -36,3 +36,5 @@ connectDB().then(()=>{
 }).catch((error)=>{
   console.log(error, "there is some issue in index.js file ")
 })
+
+

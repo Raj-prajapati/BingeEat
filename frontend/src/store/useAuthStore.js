@@ -57,10 +57,10 @@ saveAddress:async (address) => {
   try {
     set({isLoading:true})
     await axiosInstance.patch("/auth/saveaddress",{address})
-    toast.success("Address Saved")
+    toast.success("Address Saved from store")
     
   } catch (error) {
-    const message=error?.response?.data?.message ||"Could not save the address"
+    const message=error?.response?.data?.message ||"Could not save the address from store"
     toast.error(message)
   } finally{
       set({isLoading:false})
